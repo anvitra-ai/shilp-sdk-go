@@ -38,12 +38,15 @@ func main() {
 	}
 	fmt.Printf("Collections: %+v\n", collections.Data)
 
+    // Drop collection if exists
+	client.DropCollection("my-collection")
+
 	// Create a new collection
 	_, err = client.AddCollection(shilp.AddCollectionRequest{
 		Name: "my-collection",
 	})
 	if err != nil {
-		log.Printf("Failed to add collection: %v", err)
+		log.Fatalf("Failed to create collection: %v", err)
 	}
 
 	// Insert a record
@@ -51,19 +54,19 @@ func main() {
 		Collection: "my-collection",
 		ID:         "record-1",
 		Record: map[string]interface{}{
-			"title": "Hello World",
+			"title":  "Hello World",
 			"vector": []float64{0.1, 0.2, 0.3},
 		},
 	})
 	if err != nil {
 		log.Printf("Failed to insert record: %v", err)
 	}
-    // Flush collection incase you are using insert record.
-    // Flush can be used post inserting the batch of records.
-    _, err = client.FlushCollection("my-collection")
-    if err != nil {
-        log.Printf("Failed to flush collection: %v", err)
-    }
+	// Flush collection incase you are using insert record.
+	// Flush can be used post inserting the batch of records.
+	_, err = client.FlushCollection("my-collection")
+	if err != nil {
+		log.Printf("Failed to flush collection: %v", err)
+	}
 
 	// Search
 	results, err := client.SearchData("my-collection", "Hello", []string{"title"}, 10)
@@ -71,6 +74,11 @@ func main() {
 		log.Printf("Search failed: %v", err)
 	}
 	fmt.Printf("Search results: %+v\n", results.Data)
+
+	_, err = client.DropCollection("my-collection")
+	if err != nil {
+		log.Printf("Failed to drop collection: %v", err)
+	}
 }
 ```
 
