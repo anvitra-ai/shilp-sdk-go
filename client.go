@@ -71,6 +71,7 @@ func (c *Client) doRequest(method, path string, body interface{}, result interfa
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
