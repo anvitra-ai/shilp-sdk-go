@@ -22,7 +22,7 @@ import (
 
 func main() {
 	// Initialize the client
-	client := shilp.NewClient("http://localhost:8080")
+	client := shilp.NewClient("http://localhost:3000")
 
 	// Check health
 	health, err := client.HealthCheck()
