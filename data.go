@@ -15,7 +15,7 @@ func (c *Client) IngestData(req IngestRequest) (*IngestResponse, error) {
 	return &result, err
 }
 
-// SearchData searches for data in a collection
+// SearchData searches for data in a collection using GET request
 func (c *Client) SearchData(collection, query string, fields []string, limit int) (*SearchResponse, error) {
 	var result SearchResponse
 	queryParams := map[string]string{
@@ -33,6 +33,13 @@ func (c *Client) SearchData(collection, query string, fields []string, limit int
 	return &result, err
 }
 
+// SearchDataPost searches for data in a collection using POST request with weights support
+func (c *Client) SearchDataPost(req SearchRequest) (*SearchResponse, error) {
+	var result SearchResponse
+	err := c.doRequest("POST", "/api/data/v1/search", req, &result, nil)
+	return &result, err
+}
+
 // ListStorage lists contents of a directory in uploads storage
 func (c *Client) ListStorage(path string) (*ListStorageResponse, error) {
 	var result ListStorageResponse
@@ -41,6 +48,22 @@ func (c *Client) ListStorage(path string) (*ListStorageResponse, error) {
 		queryParams["path"] = path
 	}
 	err := c.doRequest("GET", "/api/data/v1/storage/list", nil, &result, queryParams)
+	return &result, err
+}
+
+// ReadDocument reads the first few rows of a CSV document
+func (c *Client) ReadDocument(path string, rows, skip int) (*ReadDocumentResponse, error) {
+	var result ReadDocumentResponse
+	queryParams := map[string]string{
+		"path": path,
+	}
+	if rows > 0 {
+		queryParams["rows"] = strconv.Itoa(rows)
+	}
+	if skip > 0 {
+		queryParams["skip"] = strconv.Itoa(skip)
+	}
+	err := c.doRequest("GET", "/api/data/v1/storage/read", nil, &result, queryParams)
 	return &result, err
 }
 
