@@ -15,7 +15,8 @@ func (c *Client) IngestData(req IngestRequest) (*IngestResponse, error) {
 	return &result, err
 }
 
-// SearchData searches for data in a collection using GET request
+// SearchData searches for data in a collection using GET request.
+// For advanced search with field weights, use SearchDataPost instead.
 func (c *Client) SearchData(collection, query string, fields []string, limit int) (*SearchResponse, error) {
 	var result SearchResponse
 	queryParams := map[string]string{
@@ -33,7 +34,9 @@ func (c *Client) SearchData(collection, query string, fields []string, limit int
 	return &result, err
 }
 
-// SearchDataPost searches for data in a collection using POST request with weights support
+// SearchDataPost searches for data in a collection using POST request.
+// This method supports field-specific weights via the SearchRequest.Weights field,
+// allowing fine-tuned control over search relevance scoring.
 func (c *Client) SearchDataPost(req SearchRequest) (*SearchResponse, error) {
 	var result SearchResponse
 	err := c.doRequest("POST", "/api/data/v1/search", req, &result, nil)
@@ -53,6 +56,16 @@ func (c *Client) ListStorage(path string) (*ListStorageResponse, error) {
 
 // ReadDocument reads the first few rows of a CSV document
 func (c *Client) ReadDocument(path string, rows, skip int) (*ReadDocumentResponse, error) {
+	if path == "" {
+		return nil, fmt.Errorf("path cannot be empty")
+	}
+	if rows < 0 {
+		return nil, fmt.Errorf("rows cannot be negative")
+	}
+	if skip < 0 {
+		return nil, fmt.Errorf("skip cannot be negative")
+	}
+
 	var result ReadDocumentResponse
 	queryParams := map[string]string{
 		"path": path,
