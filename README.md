@@ -82,10 +82,58 @@ func main() {
 }
 ```
 
+### Debug Operations
+
+The SDK also provides debug endpoints for inspecting collection internals:
+
+```go
+// Re-index a collection
+_, err = client.ReIndexCollection("my-collection")
+
+// Get collection levels
+levels, err := client.GetCollectionLevels("my-collection")
+if err != nil {
+	log.Printf("Failed to get levels: %v", err)
+}
+
+// Get nodes at a specific level
+nodes, err := client.GetCollectionNodesAtLevel("my-collection", 0)
+if err != nil {
+	log.Printf("Failed to get nodes: %v", err)
+}
+
+// Get node information
+nodeInfo, err := client.GetCollectionNodeInfo("my-collection", "title", 123)
+if err != nil {
+	log.Printf("Failed to get node info: %v", err)
+}
+
+// Get distance to a node
+limit := 10
+offset := 0
+neighbors, err := client.GetCollectionNodeNeighborsAtLevel("my-collection", "title", 123, 0, &limit, &offset)
+if err != nil {
+	log.Printf("Failed to get neighbors: %v", err)
+}
+
+// Get distance calculation
+distance, err := client.GetCollectionDistance("my-collection", "title", 123, "some text")
+if err != nil {
+	log.Printf("Failed to get distance: %v", err)
+}
+
+// Get node by reference ID
+refNode, err := client.GetCollectionNodeByReferenceNodeID("my-collection", 456)
+if err != nil {
+	log.Printf("Failed to get reference node: %v", err)
+}
+```
+
 ## Features
 
-- Collection Management (List, Add, Drop, Rename, Load, Unload, Flush)
-- Data Ingestion & Search
+- Collection Management (List, Add, Drop, Rename, Load, Unload, Flush, ReIndex)
+- Data Ingestion & Search (with keyword fields support)
 - Record Management (Insert, Delete, Expiry Cleanup)
+- Debug Collection Operations (Distance, Node Info, Levels, Neighbors)
 - Storage Listing
 - Health Check
