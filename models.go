@@ -45,9 +45,10 @@ type InsertRecordResponse struct {
 
 // RecordData represents the record data in the response
 type RecordData struct {
-	ID     string                 `json:"id"`
-	Expiry int64                  `json:"expiry"`
-	Fields map[string]interface{} `json:"fields"`
+	ID            string                 `json:"id"`
+	Expiry        int64                  `json:"expiry"`
+	Fields        map[string]interface{} `json:"fields"`
+	KeywordFields map[string]bool        `json:"keyword_fields,omitempty"`
 }
 
 // IngestRequest represents the request to ingest data
@@ -57,6 +58,7 @@ type IngestRequest struct {
 	Fields         []string `json:"fields,omitempty"`
 	FilePath       string   `json:"file_path"`
 	IDField        string   `json:"id_field,omitempty"`
+	KeywordFields  []string `json:"keyword_fields,omitempty"`
 }
 
 // IngestResponse represents the response for data ingestion
@@ -108,4 +110,81 @@ type ReadDocumentResponse struct {
 type HealthResponse struct {
 	Success bool   `json:"success"`
 	Version string `json:"version"`
+}
+
+// DebugDistanceResponse represents the response for debug distance endpoint
+type DebugDistanceResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Data    struct {
+		Distance float64   `json:"distance"`
+		Vector   []float64 `json:"vector"`
+	} `json:"data"`
+}
+
+// DebugNeighbor represents a neighbor node in the graph
+type DebugNeighbor struct {
+	NodeID   int                    `json:"node_id"`
+	VectorID string                 `json:"vector_id"`
+	Field    string                 `json:"field"`
+	Distance float64                `json:"distance"`
+	Metadata map[string]interface{} `json:"metadata"`
+}
+
+// DebugNodeInfo represents detailed information about a node
+type DebugNodeInfo struct {
+	NodeID    int                    `json:"node_id"`
+	VectorID  string                 `json:"vector_id"`
+	Field     string                 `json:"field"`
+	Level     int                    `json:"level"`
+	Metadata  map[string]interface{} `json:"metadata"`
+	Neighbors []DebugNeighbor        `json:"neighbors"`
+}
+
+// DebugNodeInfoResponse represents the response for debug node info endpoint
+type DebugNodeInfoResponse struct {
+	Success bool           `json:"success"`
+	Message string         `json:"message"`
+	Data    *DebugNodeInfo `json:"data"`
+}
+
+// DebugLevelInfo represents level information
+type DebugLevelInfo struct {
+	Level     int `json:"level"`
+	NodeCount int `json:"node_count"`
+}
+
+// DebugLevelsResponse represents the response for debug levels endpoint
+type DebugLevelsResponse struct {
+	Success bool                        `json:"success"`
+	Message string                      `json:"message"`
+	Data    map[string][]DebugLevelInfo `json:"data"`
+}
+
+// DebugNodesAtLevelResponse represents the response for debug nodes at level endpoint
+type DebugNodesAtLevelResponse struct {
+	Success bool             `json:"success"`
+	Message string           `json:"message"`
+	Data    map[string][]int `json:"data"`
+}
+
+// DebugVectorNode represents a vector node in the reference node response
+type DebugVectorNode struct {
+	ID     int       `json:"id"`
+	Field  string    `json:"field"`
+	Vector []float64 `json:"vector"`
+}
+
+// DebugReferenceNode represents a reference node with its metadata and vector nodes
+type DebugReferenceNode struct {
+	ID       string                 `json:"id"`
+	Metadata map[string]interface{} `json:"metadata"`
+	Nodes    []DebugVectorNode      `json:"nodes"`
+}
+
+// DebugReferenceNodeResponse represents the response for debug reference node endpoint
+type DebugReferenceNodeResponse struct {
+	Success bool                `json:"success"`
+	Message string              `json:"message"`
+	Data    *DebugReferenceNode `json:"data"`
 }

@@ -72,6 +72,14 @@ func (c *Client) RenameCollection(oldName, newName string) (*GenericResponse, er
 	return &result, err
 }
 
+// ReIndexCollection re-indexes a collection for debug purposes
+func (c *Client) ReIndexCollection(collectionName string) (*GenericResponse, error) {
+	var result GenericResponse
+	path := fmt.Sprintf("/api/collections/v1/%s/reindex", collectionName)
+	err := c.doRequest("PUT", path, nil, &result, nil)
+	return &result, err
+}
+
 // InsertRecord inserts a new record into a collection
 func (c *Client) InsertRecord(req InsertRecordRequest) (*InsertRecordResponse, error) {
 	var result InsertRecordResponse
