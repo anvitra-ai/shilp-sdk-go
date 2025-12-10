@@ -70,11 +70,12 @@ type IngestResponse struct {
 
 // SearchRequest represents the request body for POST search
 type SearchRequest struct {
-	Collection string             `json:"collection"`
-	Query      string             `json:"query"`
-	Fields     []string           `json:"fields,omitempty"`
-	Limit      int                `json:"limit,omitempty"`
-	Weights    map[string]float64 `json:"weights,omitempty"`
+	Collection  string             `json:"collection"`
+	Query       string             `json:"query"`
+	Fields      []string           `json:"fields,omitempty"`
+	Limit       int                `json:"limit,omitempty"`
+	Weights     map[string]float64 `json:"weights,omitempty"`
+	MaxDistance *float64           `json:"max_distance,omitempty"`
 }
 
 // SearchResponse represents the response for searching data
