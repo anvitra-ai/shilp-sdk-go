@@ -16,7 +16,7 @@ func (c *Client) IngestData(req IngestRequest) (*IngestResponse, error) {
 }
 
 // SearchData searches for data in a collection using GET request.
-// For advanced search with field weights, use SearchDataPost instead.
+// For advanced search with field weights and max distance, use SearchDataPost instead.
 func (c *Client) SearchData(collection, query string, fields []string, limit int) (*SearchResponse, error) {
 	var result SearchResponse
 	queryParams := map[string]string{

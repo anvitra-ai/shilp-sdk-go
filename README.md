@@ -75,6 +75,20 @@ func main() {
 	}
 	fmt.Printf("Search results: %+v\n", results.Data)
 
+	// Advanced search with max distance filter
+	maxDist := 0.5
+	advancedResults, err := client.SearchDataPost(shilp.SearchRequest{
+		Collection:  "my-collection",
+		Query:       "Hello",
+		Fields:      []string{"title"},
+		Limit:       10,
+		MaxDistance: &maxDist,
+	})
+	if err != nil {
+		log.Printf("Advanced search failed: %v", err)
+	}
+	fmt.Printf("Advanced search results: %+v\n", advancedResults.Data)
+
 	_, err = client.DropCollection("my-collection")
 	if err != nil {
 		log.Printf("Failed to drop collection: %v", err)
