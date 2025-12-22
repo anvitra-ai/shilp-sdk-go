@@ -124,3 +124,10 @@ func (c *Client) StreamIngestStats(collection string, stop <-chan struct{}) (<-c
 
 	return events, errs
 }
+
+// ListEmbeddingModels lists all available embedding providers and their models
+func (c *Client) ListEmbeddingModels() (*ListEmbeddingModelsResponse, error) {
+	var result ListEmbeddingModelsResponse
+	err := c.doRequest("GET", "/api/data/v1/embedding/models", nil, &result, nil)
+	return &result, err
+}
