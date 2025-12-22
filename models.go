@@ -43,6 +43,7 @@ type InsertRecordRequest struct {
 	Expiry            int64                  `json:"expiry,omitempty"`
 	ID                string                 `json:"id,omitempty"`
 	Record            map[string]interface{} `json:"record"`
+	MetadataFields    map[string]AttrType    `json:"metadata_fields,omitempty"`
 	EmbeddingProvider string                 `json:"embedding_provider,omitempty"`
 	Fields            []string               `json:"fields,omitempty"`
 	KeywordFields     []string               `json:"keyword_fields,omitempty"`
@@ -68,12 +69,15 @@ type RecordData struct {
 
 // IngestRequest represents the request to ingest data
 type IngestRequest struct {
-	CollectionName string   `json:"collection_name"`
-	ExpiryField    string   `json:"expiry_field,omitempty"`
-	Fields         []string `json:"fields,omitempty"`
-	FilePath       string   `json:"file_path"`
-	IDField        string   `json:"id_field,omitempty"`
-	KeywordFields  []string `json:"keyword_fields,omitempty"`
+	FilePath              string              `json:"file_path"`
+	CollectionName        string              `json:"collection_name"`
+	KeywordFields         []string            `json:"keyword_fields,omitempty"`
+	MetadataFields        map[string]AttrType `json:"metadata_fields,omitempty"`
+	Fields                []string            `json:"fields"`
+	IdField               string              `json:"id_field,omitempty"`
+	ExpiryField           string              `json:"expiry_field,omitempty"`
+	EmbeddingProviderName string              `json:"embedding_provider,omitempty"`
+	EmbeddingModel        string              `json:"embedding_model,omitempty"`
 }
 
 // IngestResponse represents the response for data ingestion
@@ -223,4 +227,29 @@ type ListEmbeddingModelsResponse struct {
 	Success bool                `json:"success"`
 	Message string              `json:"message"`
 	Data    []EmbeddingProvider `json:"data"`
+}
+
+// AttrType represents the type of a metadata attribute
+type AttrType int
+
+const (
+	AttrTypeInt64 AttrType = iota
+	AttrTypeFloat64
+	AttrTypeString
+	AttrTypeBool
+)
+
+func (t AttrType) String() string {
+	switch t {
+	case AttrTypeInt64:
+		return "int64"
+	case AttrTypeFloat64:
+		return "float64"
+	case AttrTypeString:
+		return "string"
+	case AttrTypeBool:
+		return "bool"
+	default:
+		return "unknown"
+	}
 }
