@@ -1,5 +1,7 @@
 package shilp
 
+import "fmt"
+
 // GenericResponse represents the standard response structure
 type GenericResponse struct {
 	Success bool   `json:"success"`
@@ -95,6 +97,8 @@ type SearchRequest struct {
 	Limit       int                `json:"limit,omitempty"`
 	Weights     map[string]float64 `json:"weights,omitempty"`
 	MaxDistance *float64           `json:"max_distance,omitempty"`
+	Filters     CompoundFilter     `json:"filters,omitempty"`
+	Sort        CompoundSort       `json:"sort,omitempty"`
 }
 
 // SearchResponse represents the response for searching data
@@ -252,4 +256,115 @@ func (t AttrType) String() string {
 	default:
 		return "unknown"
 	}
+}
+
+// FilterOp represents a filter operation
+type FilterOp int
+
+const (
+	OpEquals FilterOp = iota
+	OpNotEquals
+	OpGreaterThan
+	OpGreaterThanOrEqual
+	OpLessThan
+	OpLessThanOrEqual
+	OpIn
+	OpNotIn
+)
+
+func (op FilterOp) String() string {
+	switch op {
+	case OpEquals:
+		return "="
+	case OpNotEquals:
+		return "!="
+	case OpGreaterThan:
+		return ">"
+	case OpGreaterThanOrEqual:
+		return ">="
+	case OpLessThan:
+		return "<"
+	case OpLessThanOrEqual:
+		return "<="
+	case OpIn:
+		return "IN"
+	case OpNotIn:
+		return "NOT IN"
+	default:
+		return "unknown"
+	}
+}
+
+// FilterExpression represents a single filter condition
+type FilterExpression struct {
+	Attribute string   `json:"attribute,omitempty"`
+	Op        FilterOp `json:"op,omitempty"`
+	Value     any      `json:"value,omitempty"`
+	Values    []any    `json:"values,omitempty"`
+}
+
+// Validate checks if the filter expression is valid
+func (f *FilterExpression) Validate() error {
+	if f.Attribute == "" {
+		return fmt.Errorf("attribute name cannot be empty")
+	}
+
+	switch f.Op {
+	case OpIn, OpNotIn:
+		if len(f.Values) == 0 {
+			return fmt.Errorf("IN/NOT IN operations require at least one value")
+		}
+	default:
+		if f.Value == nil {
+			return fmt.Errorf("value cannot be nil for operation %s", f.Op)
+		}
+	}
+
+	return nil
+}
+
+// CompoundFilter represents a combination of filter expressions
+type CompoundFilter struct {
+	And []FilterExpression `json:"and,omitempty"`
+	// Or  []FilterExpression `json:"or,omitempty"`
+}
+
+// SortOrder represents the sort direction
+type SortOrder int
+
+const (
+	SortAscending SortOrder = iota
+	SortDescending
+)
+
+func (s SortOrder) String() string {
+	switch s {
+	case SortAscending:
+		return "ASC"
+	case SortDescending:
+		return "DESC"
+	default:
+		return "unknown"
+	}
+}
+
+// SortExpression represents a sort criterion
+type SortExpression struct {
+	Attribute string    `json:"attribute"`
+	Order     SortOrder `json:"order"`
+}
+
+// Validate checks if the sort expression is valid
+func (s *SortExpression) Validate() error {
+	if s.Attribute == "" {
+		return fmt.Errorf("sort attribute cannot be empty")
+	}
+	if s.Order != SortAscending && s.Order != SortDescending {
+		return fmt.Errorf("invalid sort order: %d", s.Order)
+	}
+	return nil
+}
+
+type CompoundSort struct {
+	Sorts []SortExpression `json:"sorts,omitempty"`
 }
