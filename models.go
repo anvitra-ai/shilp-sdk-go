@@ -6,33 +6,47 @@ type GenericResponse struct {
 	Message string `json:"message"`
 }
 
+// MetadataField represents a metadata field definition
+type MetadataField struct {
+	Name string `json:"name"`
+	Type int    `json:"type"`
+}
+
 // Collection represents a collection in the database
 type Collection struct {
-	Name             string   `json:"name"`
-	IsLoaded         bool     `json:"is_loaded"`
-	Fields           []string `json:"fields"`
-	SearchableFields []string `json:"searchable_fields"`
+	Name               string          `json:"name"`
+	IsLoaded           bool            `json:"is_loaded"`
+	Fields             []string        `json:"fields"`
+	SearchableFields   []string        `json:"searchable_fields"`
+	HasMetadataEnabled bool            `json:"has_metadata_enabled"`
+	Metadata           []MetadataField `json:"metadata,omitempty"`
 }
 
 // ListCollectionsResponse represents the response for listing collections
 type ListCollectionsResponse struct {
-	Success bool         `json:"success"`
-	Message string       `json:"message"`
-	Data    []Collection `json:"data"`
+	Success         bool         `json:"success"`
+	Message         string       `json:"message"`
+	Data            []Collection `json:"data"`
+	SupportMetadata bool         `json:"support_metadata"`
 }
 
 // AddCollectionRequest represents the request to add a new collection
 type AddCollectionRequest struct {
 	Name               string `json:"name"`
 	NoReferenceStorage bool   `json:"no_reference_storage,omitempty"`
+	HasMetadataStorage bool   `json:"has_metadata_storage,omitempty"`
 }
 
 // InsertRecordRequest represents the request to insert a record
 type InsertRecordRequest struct {
-	Collection string                 `json:"collection"`
-	Expiry     int64                  `json:"expiry,omitempty"`
-	ID         string                 `json:"id,omitempty"`
-	Record     map[string]interface{} `json:"record"`
+	Collection        string                 `json:"collection"`
+	Expiry            int64                  `json:"expiry,omitempty"`
+	ID                string                 `json:"id,omitempty"`
+	Record            map[string]interface{} `json:"record"`
+	EmbeddingProvider string                 `json:"embedding_provider,omitempty"`
+	Fields            []string               `json:"fields,omitempty"`
+	KeywordFields     []string               `json:"keyword_fields,omitempty"`
+	Model             string                 `json:"model,omitempty"`
 }
 
 // InsertRecordResponse represents the response for inserting a record
@@ -45,10 +59,11 @@ type InsertRecordResponse struct {
 
 // RecordData represents the record data in the response
 type RecordData struct {
-	ID            string                 `json:"id"`
-	Expiry        int64                  `json:"expiry"`
-	Fields        map[string]interface{} `json:"fields"`
-	KeywordFields map[string]bool        `json:"keyword_fields,omitempty"`
+	ID             string                 `json:"id"`
+	Expiry         int64                  `json:"expiry"`
+	Fields         map[string]interface{} `json:"fields"`
+	KeywordFields  map[string]bool        `json:"keyword_fields,omitempty"`
+	MetadataFields map[string]int         `json:"metadata_fields,omitempty"`
 }
 
 // IngestRequest represents the request to ingest data
@@ -188,4 +203,24 @@ type DebugReferenceNodeResponse struct {
 	Success bool                `json:"success"`
 	Message string              `json:"message"`
 	Data    *DebugReferenceNode `json:"data"`
+}
+
+// EmbeddingModel represents an embedding model
+type EmbeddingModel struct {
+	Name      string `json:"name"`
+	IsDefault bool   `json:"is_default"`
+}
+
+// EmbeddingProvider represents an embedding provider with its models
+type EmbeddingProvider struct {
+	Name      string           `json:"name"`
+	IsDefault bool             `json:"is_default"`
+	Models    []EmbeddingModel `json:"models"`
+}
+
+// ListEmbeddingModelsResponse represents the response for listing embedding models
+type ListEmbeddingModelsResponse struct {
+	Success bool                `json:"success"`
+	Message string              `json:"message"`
+	Data    []EmbeddingProvider `json:"data"`
 }
