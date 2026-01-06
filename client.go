@@ -72,7 +72,11 @@ func (c *Client) doRequest(method, path string, body interface{}, result interfa
 	return nil
 }
 
-func (c *Client) doFileRequest(method, url string, filename string) error {
+func (c *Client) doFileRequest(method, path string, filename string) error {
+	u, err := url.Parse(c.baseURL + path)
+	if err != nil {
+		return fmt.Errorf("invalid URL: %w", err)
+	}
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	// Create form file field: name MUST be "file"
@@ -95,7 +99,7 @@ func (c *Client) doFileRequest(method, url string, filename string) error {
 	// Important: close writer to finalize the boundary
 	writer.Close()
 
-	req, err := http.NewRequest(method, url, body)
+	req, err := http.NewRequest(method, u.String(), body)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -126,7 +130,6 @@ func (c *Client) doRequestWithFileResponse(method, path string, body interface{}
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
 		bodyBytes, _ := io.ReadAll(resp.Body)

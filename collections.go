@@ -72,7 +72,7 @@ func (c *Client) UnloadCollection(name string) (*GenericResponse, error) {
 // The caller can io.Copy to store the file locally and is responsible for closing the ReadCloser
 func (c *Client) ExportCollection(name string) (io.ReadCloser, error) {
 	path := fmt.Sprintf("/api/collections/v1/%s/export", name)
-	return c.doRequestWithFileResponse(http.MethodGet, path, nil, nil)
+	return c.doRequestWithFileResponse(http.MethodPost, path, nil, nil)
 }
 
 // ImportCollection imports a collection from a file
