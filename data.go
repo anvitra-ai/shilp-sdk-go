@@ -5,41 +5,21 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 )
 
 // IngestData ingests data into a collection
 func (c *Client) IngestData(req IngestRequest) (*IngestResponse, error) {
 	var result IngestResponse
-	err := c.doRequest("POST", "/api/data/v1/ingest", req, &result, nil)
-	return &result, err
-}
-
-// SearchData searches for data in a collection using GET request.
-// For advanced search with field weights and max distance, use SearchDataPost instead.
-func (c *Client) SearchData(collection, query string, fields []string, limit int) (*SearchResponse, error) {
-	var result SearchResponse
-	queryParams := map[string]string{
-		"collection": collection,
-		"q":          query,
-	}
-	if len(fields) > 0 {
-		queryParams["fields"] = strings.Join(fields, ",")
-	}
-	if limit > 0 {
-		queryParams["limit"] = strconv.Itoa(limit)
-	}
-
-	err := c.doRequest("GET", "/api/data/v1/search", nil, &result, queryParams)
+	err := c.doRequest(http.MethodPost, "/api/data/v1/ingest", req, &result, nil)
 	return &result, err
 }
 
 // SearchDataPost searches for data in a collection using POST request.
 // This method supports field-specific weights via the SearchRequest.Weights field,
 // allowing fine-tuned control over search relevance scoring.
-func (c *Client) SearchDataPost(req SearchRequest) (*SearchResponse, error) {
+func (c *Client) SearchData(req SearchRequest) (*SearchResponse, error) {
 	var result SearchResponse
-	err := c.doRequest("POST", "/api/data/v1/search", req, &result, nil)
+	err := c.doRequest(http.MethodPost, "/api/data/v1/search", req, &result, nil)
 	return &result, err
 }
 
@@ -50,7 +30,7 @@ func (c *Client) ListStorage(path string) (*ListStorageResponse, error) {
 	if path != "" {
 		queryParams["path"] = path
 	}
-	err := c.doRequest("GET", "/api/data/v1/storage/list", nil, &result, queryParams)
+	err := c.doRequest(http.MethodGet, "/api/data/v1/storage/list", nil, &result, queryParams)
 	return &result, err
 }
 
@@ -76,7 +56,7 @@ func (c *Client) ReadDocument(path string, rows, skip int) (*ReadDocumentRespons
 	if skip > 0 {
 		queryParams["skip"] = strconv.Itoa(skip)
 	}
-	err := c.doRequest("GET", "/api/data/v1/storage/read", nil, &result, queryParams)
+	err := c.doRequest(http.MethodGet, "/api/data/v1/storage/read", nil, &result, queryParams)
 	return &result, err
 }
 
@@ -92,7 +72,7 @@ func (c *Client) StreamIngestStats(collection string, stop <-chan struct{}) (<-c
 		defer close(errs)
 
 		url := fmt.Sprintf("%s/api/data/v1/ingest/stats?collection=%s", c.baseURL, collection)
-		req, err := http.NewRequest("GET", url, nil)
+		req, err := http.NewRequest(http.MethodGet, url, nil)
 		if err != nil {
 			errs <- err
 			return
@@ -128,6 +108,6 @@ func (c *Client) StreamIngestStats(collection string, stop <-chan struct{}) (<-c
 // ListEmbeddingModels lists all available embedding providers and their models
 func (c *Client) ListEmbeddingModels() (*ListEmbeddingModelsResponse, error) {
 	var result ListEmbeddingModelsResponse
-	err := c.doRequest("GET", "/api/data/v1/embedding/models", nil, &result, nil)
+	err := c.doRequest(http.MethodGet, "/api/data/v1/embedding/models", nil, &result, nil)
 	return &result, err
 }

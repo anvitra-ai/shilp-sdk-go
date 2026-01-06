@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -45,33 +47,10 @@ func NewClient(baseURL string, opts ...ClientOption) *Client {
 
 // doRequest performs an HTTP request
 func (c *Client) doRequest(method, path string, body interface{}, result interface{}, queryParams map[string]string) error {
-	u, err := url.Parse(c.baseURL + path)
+	req, err := c.prepareRequest(method, path, body, queryParams)
 	if err != nil {
-		return fmt.Errorf("invalid URL: %w", err)
+		return err
 	}
-
-	if len(queryParams) > 0 {
-		q := u.Query()
-		for k, v := range queryParams {
-			q.Set(k, v)
-		}
-		u.RawQuery = q.Encode()
-	}
-
-	var reqBody io.Reader
-	if body != nil {
-		jsonBody, err := json.Marshal(body)
-		if err != nil {
-			return fmt.Errorf("failed to marshal request body: %w", err)
-		}
-		reqBody = bytes.NewBuffer(jsonBody)
-	}
-
-	req, err := http.NewRequest(method, u.String(), reqBody)
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -91,4 +70,99 @@ func (c *Client) doRequest(method, path string, body interface{}, result interfa
 	}
 
 	return nil
+}
+
+func (c *Client) doFileRequest(method, url string, filename string) error {
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	// Create form file field: name MUST be "file"
+	part, err := writer.CreateFormFile("file", filename)
+	if err != nil {
+		return fmt.Errorf("failed to create form file: %w", err)
+	}
+
+	f, err := os.Open(filename)
+	if err != nil {
+		return fmt.Errorf("failed to open file: %w", err)
+	}
+	defer f.Close()
+
+	_, err = f.WriteTo(part)
+	if err != nil {
+		return fmt.Errorf("failed to write file to form: %w", err)
+	}
+
+	// Important: close writer to finalize the boundary
+	writer.Close()
+
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API error: %s (status: %d)", string(bodyBytes), resp.StatusCode)
+	}
+
+	return nil
+}
+
+// doRequest performs an HTTP request
+func (c *Client) doRequestWithFileResponse(method, path string, body interface{}, queryParams map[string]string) (io.ReadCloser, error) {
+	req, err := c.prepareRequest(method, path, body, queryParams)
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error: %s (status: %d)", string(bodyBytes), resp.StatusCode)
+	}
+
+	return resp.Body, nil
+}
+
+func (c *Client) prepareRequest(method, path string, body interface{}, queryParams map[string]string) (*http.Request, error) {
+	u, err := url.Parse(c.baseURL + path)
+	if err != nil {
+		return nil, fmt.Errorf("invalid URL: %w", err)
+	}
+
+	if len(queryParams) > 0 {
+		q := u.Query()
+		for k, v := range queryParams {
+			q.Set(k, v)
+		}
+		u.RawQuery = q.Encode()
+	}
+
+	var reqBody io.Reader
+	if body != nil {
+		jsonBody, err := json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal request body: %w", err)
+		}
+		reqBody = bytes.NewBuffer(jsonBody)
+	}
+
+	req, err := http.NewRequest(method, u.String(), reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	return req, nil
 }

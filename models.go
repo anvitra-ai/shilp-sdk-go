@@ -16,12 +16,17 @@ type MetadataField struct {
 
 // Collection represents a collection in the database
 type Collection struct {
-	Name               string          `json:"name"`
-	IsLoaded           bool            `json:"is_loaded"`
-	Fields             []string        `json:"fields"`
-	SearchableFields   []string        `json:"searchable_fields"`
-	HasMetadataEnabled bool            `json:"has_metadata_enabled"`
-	Metadata           []MetadataField `json:"metadata,omitempty"`
+	Name               string                 `json:"name"`
+	IsLoaded           bool                   `json:"is_loaded"`
+	Fields             []string               `json:"fields"`
+	SearchableFields   []string               `json:"searchable_fields"`
+	Metadata           []MetadataColumnSchema `json:"metadata,omitempty"`
+	HasMetadataEnabled bool                   `json:"has_metadata_enabled"`
+}
+
+type MetadataColumnSchema struct {
+	Name string   `json:"name"`
+	Type AttrType `json:"type"`
 }
 
 // ListCollectionsResponse represents the response for listing collections
@@ -125,9 +130,9 @@ type ListStorageResponse struct {
 
 // ReadDocumentResponse represents the response for reading document contents
 type ReadDocumentResponse struct {
-	Success bool                     `json:"success"`
-	Message string                   `json:"message"`
-	Data    []map[string]interface{} `json:"data"`
+	Success bool                `json:"success"`
+	Message string              `json:"message"`
+	Data    []map[string]string `json:"data"`
 }
 
 // HealthResponse represents the response for health check

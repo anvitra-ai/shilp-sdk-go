@@ -2,6 +2,7 @@ package shilp
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 )
 
@@ -12,7 +13,7 @@ func (c *Client) GetCollectionDistance(collectionName, field string, nodeID int,
 	queryParams := map[string]string{
 		"text": text,
 	}
-	err := c.doRequest("GET", path, nil, &result, queryParams)
+	err := c.doRequest(http.MethodGet, path, nil, &result, queryParams)
 	return &result, err
 }
 
@@ -20,7 +21,7 @@ func (c *Client) GetCollectionDistance(collectionName, field string, nodeID int,
 func (c *Client) GetCollectionNodeInfo(collectionName, field string, nodeID int) (*DebugNodeInfoResponse, error) {
 	var result DebugNodeInfoResponse
 	path := fmt.Sprintf("/api/collections/v1/debug/%s/%s/nodes/%d", collectionName, field, nodeID)
-	err := c.doRequest("GET", path, nil, &result, nil)
+	err := c.doRequest(http.MethodGet, path, nil, &result, nil)
 	return &result, err
 }
 
@@ -37,7 +38,7 @@ func (c *Client) GetCollectionNodeNeighborsAtLevel(collectionName, field string,
 		queryParams["offset"] = strconv.Itoa(*offset)
 	}
 
-	err := c.doRequest("GET", path, nil, &result, queryParams)
+	err := c.doRequest(http.MethodGet, path, nil, &result, queryParams)
 	return &result, err
 }
 
@@ -45,7 +46,7 @@ func (c *Client) GetCollectionNodeNeighborsAtLevel(collectionName, field string,
 func (c *Client) GetCollectionLevels(collectionName string) (*DebugLevelsResponse, error) {
 	var result DebugLevelsResponse
 	path := fmt.Sprintf("/api/collections/v1/debug/%s/levels", collectionName)
-	err := c.doRequest("GET", path, nil, &result, nil)
+	err := c.doRequest(http.MethodGet, path, nil, &result, nil)
 	return &result, err
 }
 
@@ -53,7 +54,7 @@ func (c *Client) GetCollectionLevels(collectionName string) (*DebugLevelsRespons
 func (c *Client) GetCollectionNodesAtLevel(collectionName string, level int) (*DebugNodesAtLevelResponse, error) {
 	var result DebugNodesAtLevelResponse
 	path := fmt.Sprintf("/api/collections/v1/debug/%s/levels/%d", collectionName, level)
-	err := c.doRequest("GET", path, nil, &result, nil)
+	err := c.doRequest(http.MethodGet, path, nil, &result, nil)
 	return &result, err
 }
 
@@ -61,6 +62,6 @@ func (c *Client) GetCollectionNodesAtLevel(collectionName string, level int) (*D
 func (c *Client) GetCollectionNodeByReferenceNodeID(collectionName string, nodeID int) (*DebugReferenceNodeResponse, error) {
 	var result DebugReferenceNodeResponse
 	path := fmt.Sprintf("/api/collections/v1/debug/%s/nodes/reference_node/%d", collectionName, nodeID)
-	err := c.doRequest("GET", path, nil, &result, nil)
+	err := c.doRequest(http.MethodGet, path, nil, &result, nil)
 	return &result, err
 }
