@@ -149,5 +149,47 @@ if err != nil {
 - Data Ingestion & Search (with keyword fields support)
 - Record Management (Insert, Delete, Expiry Cleanup)
 - Debug Collection Operations (Distance, Node Info, Levels, Neighbors)
+- Oplog Operations (Replica Registration, Heartbeat, Get Entries, Status)
 - Storage Listing
 - Health Check
+
+### Oplog Operations
+
+The SDK provides oplog (operation log) endpoints for replica synchronization:
+
+```go
+// Register a replica for oplog tracking
+registerResp, err := client.RegisterReplica("replica-1")
+if err != nil {
+	log.Printf("Failed to register replica: %v", err)
+}
+fmt.Printf("Registered replica, last LSN: %d\n", registerResp.LastLSN)
+
+// Get oplog status for a collection
+status, err := client.GetOplogStatus("my-collection")
+if err != nil {
+	log.Printf("Failed to get oplog status: %v", err)
+}
+fmt.Printf("Oplog status - Last LSN: %d, Retention LSN: %d, Replicas: %d\n",
+	status.LastLSN, status.RetentionLSN, status.ReplicaCount)
+
+// Get oplog entries after a specific LSN
+entries, err := client.GetOplogEntries("my-collection", 1000, 100)
+if err != nil {
+	log.Printf("Failed to get oplog entries: %v", err)
+}
+fmt.Printf("Retrieved %d oplog entries, last LSN: %d\n", entries.Count, entries.LastLSN)
+
+// Get oplog entries for all collections
+allEntries, err := client.GetOplogEntries("", 1000, 100)
+if err != nil {
+	log.Printf("Failed to get oplog entries: %v", err)
+}
+
+// Update replica LSN (heartbeat)
+updateResp, err := client.UpdateReplicaLSN("my-collection", "replica-1", 1050)
+if err != nil {
+	log.Printf("Failed to update replica LSN: %v", err)
+}
+fmt.Printf("Updated replica LSN: %v\n", updateResp.Success)
+```

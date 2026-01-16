@@ -1,6 +1,9 @@
 package shilp
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // GenericResponse represents the standard response structure
 type GenericResponse struct {
@@ -22,6 +25,7 @@ type Collection struct {
 	SearchableFields   []string               `json:"searchable_fields"`
 	Metadata           []MetadataColumnSchema `json:"metadata,omitempty"`
 	HasMetadataEnabled bool                   `json:"has_metadata_enabled"`
+	NoReferenceStorage bool                   `json:"no_reference_storage"`
 }
 
 type MetadataColumnSchema struct {
@@ -85,6 +89,7 @@ type IngestRequest struct {
 	ExpiryField           string              `json:"expiry_field,omitempty"`
 	EmbeddingProviderName string              `json:"embedding_provider,omitempty"`
 	EmbeddingModel        string              `json:"embedding_model,omitempty"`
+	IngestionBatchSize    int                 `json:"ingestion_batch_size,omitempty"`
 }
 
 // IngestResponse represents the response for data ingestion
@@ -233,9 +238,10 @@ type EmbeddingProvider struct {
 
 // ListEmbeddingModelsResponse represents the response for listing embedding models
 type ListEmbeddingModelsResponse struct {
-	Success bool                `json:"success"`
-	Message string              `json:"message"`
-	Data    []EmbeddingProvider `json:"data"`
+	Success                      bool                `json:"success"`
+	Message                      string              `json:"message"`
+	Data                         []EmbeddingProvider `json:"data"`
+	SupoortsDistributedEmbedding bool                `json:"supports_distributed_embedding"`
 }
 
 // AttrType represents the type of a metadata attribute
@@ -372,4 +378,123 @@ func (s *SortExpression) Validate() error {
 
 type CompoundSort struct {
 	Sorts []SortExpression `json:"sorts,omitempty"`
+}
+
+// OplogStatusResponse represents oplog status
+type OplogStatusResponse struct {
+	Success      bool   `json:"success"`
+	Message      string `json:"message"`
+	LastLSN      uint64 `json:"last_lsn"`
+	RetentionLSN uint64 `json:"retention_lsn"`
+	ReplicaCount int    `json:"replica_count"`
+}
+
+// UpdateReplicaLSNRequest represents replica LSN update
+type UpdateReplicaLSNRequest struct {
+	Collection string `json:"collection"`
+	ReplicaID  string `json:"replica_id"`
+	LSN        uint64 `json:"lsn"`
+}
+
+// UpdateReplicaLSNResponse represents the update response
+type UpdateReplicaLSNResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
+// RegisterReplicaRequest represents replica registration
+type RegisterReplicaRequest struct {
+	ReplicaID string `json:"replica_id"`
+}
+
+// UnRegisterReplicaRequest represents replica unregistration
+type UnRegisterReplicaRequest struct {
+	ReplicaID string `json:"replica_id"`
+}
+
+// GetOplogRequest represents the query parameters for oplog endpoint
+type GetOplogRequest struct {
+	AfterLSN uint64 `query:"after_lsn"`
+	Limit    int    `query:"limit"`
+}
+
+// GetOplogResponse represents the oplog response
+type GetOplogResponse struct {
+	Success bool          `json:"success"`
+	Message string        `json:"message"`
+	Entries []*OplogEntry `json:"entries"`
+	LastLSN uint64        `json:"last_lsn"`
+	Count   int           `json:"count"`
+}
+
+// OpType represents the type of operation in the oplog
+type OpType string
+
+const (
+	OpTypeInsert           OpType = "insert"
+	OpTypeUpdate           OpType = "update"
+	OpTypeDelete           OpType = "delete"
+	OpTypeDropCollection   OpType = "drop_collection"
+	OpTypeRenameCollection OpType = "rename_collection"
+)
+
+// OplogEntry represents a single entry in the operation log
+// Every oplog entry must be self-sufficient for replay
+type OplogEntry struct {
+	// LSN is the Log Sequence Number - monotonically increasing, gap-free
+	LSN uint64 `json:"lsn"`
+
+	// Timestamp when the operation occurred
+	Timestamp time.Time `json:"timestamp"`
+
+	// Collection name this operation applies to
+	Collection string `json:"collection"`
+
+	// DocID is the document identifier
+	DocID string `json:"doc_id"`
+
+	// OpType indicates the operation type
+	OpType OpType `json:"op_type"`
+
+	// Vector data (optional, for vector fields)
+	Vector []float32 `json:"vector,omitempty"`
+
+	// Metadata (optional, for metadata fields)
+	Metadata map[string]any `json:"metadata,omitempty"`
+
+	// Keywords (optional, for keyword search)
+	Keywords []string `json:"keywords,omitempty"`
+
+	// FullDoc is required for insert operations
+	// Contains the complete document state
+	FullDoc *Record `json:"full_doc,omitempty"`
+
+	// Vectors map for multi-vector support
+	Vectors map[string][]float32 `json:"vectors,omitempty"`
+
+	// Fields for the document
+	Fields map[string]interface{} `json:"fields,omitempty"`
+
+	// KeywordFields tracks which fields are keywords
+	KeywordFields map[string]bool `json:"keyword_fields,omitempty"`
+
+	// MetadataFields tracks metadata field types
+	MetadataFields map[string]AttrType `json:"metadata_fields,omitempty"`
+
+	// Expiry time for the document (if applicable) - Unix timestamp
+	Expiry int64 `json:"expiry,omitempty"`
+
+	// NewName is used for rename operations to track the new collection name
+	NewName string `json:"new_name,omitempty"`
+}
+
+type Record struct {
+	Id             string                 `json:"id"`
+	Fields         map[string]interface{} `json:"fields"`
+	KeywordFields  map[string]bool        `json:"keyword_fields,omitempty"`
+	MetadataFields map[string]AttrType    `json:"metadata_fields,omitempty"`
+	Vectors        map[string][]float32   `json:"-"`
+	Dist           float32                `json:"-"`
+	Nodes          []string               `json:"-"`
+	Expiry         int64                  `json:"expiry,omitempty"`
 }
