@@ -5,7 +5,7 @@ This is the official Go SDK for the Shilp Vector Database API.
 ## Installation
 
 ```bash
-go get github.com/anvitra-ai/shilp-sdk-go
+go get -u github.com/anvitra-ai/shilp-sdk-go
 ```
 
 ## Usage
