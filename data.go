@@ -2,9 +2,11 @@ package shilp
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // IngestData ingests data into a collection
@@ -24,7 +26,8 @@ func (c *Client) SearchData(req SearchRequest) (*SearchResponse, error) {
 }
 
 // ListStorage lists contents of a directory in uploads storage
-func (c *Client) ListStorage(path string) (*ListStorageResponse, error) {
+// if the source is mongodb, then empty path lists all DBs. If path is a DB, lists all collections in that DB.
+func (c *Client) ListStorage(path string, source IngestSourceType) (*ListStorageResponse, error) {
 	var result ListStorageResponse
 	queryParams := map[string]string{}
 	if path != "" {
@@ -34,21 +37,40 @@ func (c *Client) ListStorage(path string) (*ListStorageResponse, error) {
 	return &result, err
 }
 
-// ReadDocument reads the first few rows of a CSV document
-func (c *Client) ReadDocument(path string, rows, skip int) (*ReadDocumentResponse, error) {
+func (c *Client) ListIngestSources() (*ListIngestionSourcesResponse, error) {
+	var result ListIngestionSourcesResponse
+	err := c.doRequest(http.MethodGet, "/api/data/v1/ingest/sources", nil, &result, nil)
+	return &result, err
+}
+
+// ReadDocument reads the first few rows of a CSV document or MongoDB collection
+// if the source is mongodb, then path is in the format "database/collection"
+// options.query can be used to filter the documents returned incase of mongodb
+func (c *Client) ReadDocument(path string, options FileReaderOptions) (*ReadDocumentResponse, error) {
 	if path == "" {
 		return nil, fmt.Errorf("path cannot be empty")
 	}
+	rows := options.Limit
 	if rows < 0 {
 		return nil, fmt.Errorf("rows cannot be negative")
 	}
+	skip := options.Skip
 	if skip < 0 {
 		return nil, fmt.Errorf("skip cannot be negative")
 	}
 
+	if options.Source == IngestSourceTypeMongoDB && len(strings.Split(path, "/")) != 2 {
+		return nil, fmt.Errorf("for mongodb source, path must be in the format 'database/collection'")
+	}
+
+	if !options.Source.IsValid() {
+		return nil, fmt.Errorf("invalid source type - %s", options.Source)
+	}
+
 	var result ReadDocumentResponse
 	queryParams := map[string]string{
-		"path": path,
+		"path":   path,
+		"source": string(options.Source),
 	}
 	if rows > 0 {
 		queryParams["rows"] = strconv.Itoa(rows)
@@ -56,7 +78,21 @@ func (c *Client) ReadDocument(path string, rows, skip int) (*ReadDocumentRespons
 	if skip > 0 {
 		queryParams["skip"] = strconv.Itoa(skip)
 	}
+	if options.Source == IngestSourceTypeMongoDB {
+		filterStr, err := json.Marshal(options.MongoFilter)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal mongo filter: %w", err)
+		}
+		queryParams["mongo_filter"] = string(filterStr)
+	}
 	err := c.doRequest(http.MethodGet, "/api/data/v1/storage/read", nil, &result, queryParams)
+	return &result, err
+}
+
+// UploadDataFile uploads a data file to the uploads storage which can be used for ingestion
+func (c *Client) UploadDataFile(filename string) (*GenericResponse, error) {
+	var result GenericResponse
+	err := c.doFileRequest(http.MethodPost, "/api/data/v1/storage/upload", filename)
 	return &result, err
 }
 

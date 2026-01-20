@@ -58,7 +58,7 @@ func (c *Client) RegisterReplica(replicaID string) (*GenericResponse, error) {
 	return &result, err
 }
 
-// UnRegisterReplica registers a replica for oplog retention tracking
+// UnRegisterReplica unregisters a replica for oplog retention tracking
 // Parameters:
 //   - replicaID: Replica identifier
 func (c *Client) UnRegisterReplica(replicaID string) (*GenericResponse, error) {
@@ -67,7 +67,7 @@ func (c *Client) UnRegisterReplica(replicaID string) (*GenericResponse, error) {
 	}
 
 	var result GenericResponse
-	err := c.doRequest(http.MethodPost, "/api/oplog/v1/register", req, &result, nil)
+	err := c.doRequest(http.MethodPost, "/api/oplog/v1/unregister", req, &result, nil)
 	return &result, err
 }
 

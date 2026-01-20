@@ -19,13 +19,44 @@ type MetadataField struct {
 
 // Collection represents a collection in the database
 type Collection struct {
-	Name               string                 `json:"name"`
-	IsLoaded           bool                   `json:"is_loaded"`
-	Fields             []string               `json:"fields"`
-	SearchableFields   []string               `json:"searchable_fields"`
-	Metadata           []MetadataColumnSchema `json:"metadata,omitempty"`
-	HasMetadataEnabled bool                   `json:"has_metadata_enabled"`
-	NoReferenceStorage bool                   `json:"no_reference_storage"`
+	Name                 string                 `json:"name"`
+	IsLoaded             bool                   `json:"is_loaded"`
+	Fields               []string               `json:"fields"`
+	SearchableFields     []string               `json:"searchable_fields"`
+	Metadata             []MetadataColumnSchema `json:"metadata,omitempty"`
+	HasMetadataEnabled   bool                   `json:"has_metadata_enabled"`
+	NoReferenceStorage   bool                   `json:"no_reference_storage"`
+	StorageType          StorageBackendType     `json:"storage_type"`
+	ReferenceStorageType StorageBackendType     `json:"reference_storage_type"`
+}
+
+// StorageBackendType represents the type of storage backend available to store the data for persistance
+type StorageBackendType int
+
+const (
+	StorageBackendDoesnotExist StorageBackendType = -1
+	StorageBackendFile         StorageBackendType = iota
+	StorageBackendS3
+)
+
+func (s StorageBackendType) String() string {
+	switch s {
+	case StorageBackendFile:
+		return "filesystem"
+	case StorageBackendS3:
+		return "s3"
+	default:
+		return "unknown"
+	}
+}
+
+func (s StorageBackendType) IsValid() bool {
+	switch s {
+	case StorageBackendFile, StorageBackendS3:
+		return true
+	default:
+		return false
+	}
 }
 
 type MetadataColumnSchema struct {
@@ -35,17 +66,26 @@ type MetadataColumnSchema struct {
 
 // ListCollectionsResponse represents the response for listing collections
 type ListCollectionsResponse struct {
-	Success         bool         `json:"success"`
-	Message         string       `json:"message"`
-	Data            []Collection `json:"data"`
-	SupportMetadata bool         `json:"support_metadata"`
+	Success      bool                  `json:"success"`
+	Message      string                `json:"message"`
+	Data         []Collection          `json:"data"`
+	MetadataInfo []MetadataSupportInfo `json:"metadata_info"`
+}
+
+type MetadataSupportInfo struct {
+	SupportMetadata bool               `json:"support_metadata"`
+	Name            string             `json:"name"`
+	Type            StorageBackendType `json:"type"`
+	IsDefault       bool               `json:"is_default"`
 }
 
 // AddCollectionRequest represents the request to add a new collection
 type AddCollectionRequest struct {
-	Name               string `json:"name"`
-	NoReferenceStorage bool   `json:"no_reference_storage,omitempty"`
-	HasMetadataStorage bool   `json:"has_metadata_storage,omitempty"`
+	Name                 string             `json:"name"`
+	NoReferenceStorage   bool               `json:"no_reference_storage"`
+	HasMetadataStorage   bool               `json:"has_metadata_storage"`
+	StorageType          StorageBackendType `json:"storage_type"`
+	ReferenceStorageType StorageBackendType `json:"reference_storage_type"`
 }
 
 // InsertRecordRequest represents the request to insert a record
@@ -80,7 +120,18 @@ type RecordData struct {
 
 // IngestRequest represents the request to ingest data
 type IngestRequest struct {
-	FilePath              string              `json:"file_path"`
+	// Source configuration - use either FilePath OR MongoDB settings
+	//FilePath has the path to the file to be ingested or `database/collection` for MongoDB
+	FilePath   string           `json:"file_path,omitempty"`
+	SourceType IngestSourceType `json:"source_type,omitempty"` // "file" or "mongodb"
+
+	// MongoDB source configuration
+	DatabaseName        string         `json:"database_name,omitempty"`
+	MongoCollection     string         `json:"mongo_collection,omitempty"`
+	Query               map[string]any `json:"query,omitempty"`
+	MongoFetchBatchSize int            `json:"mongo_fetch_batch_size,omitempty"`
+
+	// Common configuration
 	CollectionName        string              `json:"collection_name"`
 	KeywordFields         []string            `json:"keyword_fields,omitempty"`
 	MetadataFields        map[string]AttrType `json:"metadata_fields,omitempty"`
@@ -92,11 +143,40 @@ type IngestRequest struct {
 	IngestionBatchSize    int                 `json:"ingestion_batch_size,omitempty"`
 }
 
+type IngestSourceType string
+
+const (
+	IngestSourceTypeFile    IngestSourceType = "file"
+	IngestSourceTypeMongoDB IngestSourceType = "mongodb"
+)
+
+func (i IngestSourceType) IsValid() bool {
+	switch i {
+	case IngestSourceTypeFile, IngestSourceTypeMongoDB:
+		return true
+	default:
+		return false
+	}
+}
+
 // IngestResponse represents the response for data ingestion
 type IngestResponse struct {
 	Success bool     `json:"success"`
 	Message string   `json:"message"`
 	Details []string `json:"details,omitempty"`
+}
+
+type ListIngestionSourcesResponse struct {
+	Message string             `json:"message"`
+	Success bool               `json:"success"`
+	Data    []IngestSourceType `json:"data,omitempty"`
+}
+
+type FileReaderOptions struct {
+	Source      IngestSourceType       `json:"source,omitempty"`
+	MongoFilter map[string]interface{} `json:"mongo_filter,omitempty"`
+	Skip        int                    `json:"skip,omitempty"`
+	Limit       int                    `json:"limit,omitempty"`
 }
 
 // SearchRequest represents the request body for POST search
@@ -497,4 +577,69 @@ type Record struct {
 	Dist           float32                `json:"-"`
 	Nodes          []string               `json:"-"`
 	Expiry         int64                  `json:"expiry,omitempty"`
+}
+
+// Status represents the overall status of the registry
+type Status struct {
+	WriteReplica Replica    `json:"write_replica"`
+	ReadReplicas []*Replica `json:"read_replicas"`
+	Available    int        `json:"available_count"`
+	Total        int        `json:"total_count"`
+}
+
+type Replica struct {
+	Id        string `json:"id"`
+	Address   string `json:"address"`
+	IsHealthy bool   `json:"is_healthy"`
+	IsSyncing bool   `json:"is_syncing"` // Traffic gate - if true, no traffic sent
+}
+
+type ProxyStats struct {
+	ActiveProxies int      `json:"active_proxies"`
+	Targets       []string `json:"targets"`
+}
+
+type DiscoveryStats struct {
+	Registry Status     `json:"registry"`
+	Proxy    ProxyStats `json:"proxy"`
+}
+
+type SyncStatus string
+
+const (
+	SyncStatusReady   SyncStatus = "ready"
+	SyncStatusSyncing SyncStatus = "syncing"
+)
+
+type UpdateSyncStatusRequest struct {
+	AccountID string     `json:"account_id"`
+	Address   string     `json:"address"`
+	Status    SyncStatus `json:"status"`
+}
+
+type RegisterToDiscoveryRequest struct {
+	AccountID string `json:"account_id"`
+	Address   string `json:"address"`
+	Id        string `json:"id"`
+	IsRead    bool   `json:"is_read"`
+	IsWrite   bool   `json:"is_write"`
+}
+
+type ReplicaType int
+
+const (
+	ReadReplica ReplicaType = iota
+	WriteReplica
+	SingleNode
+)
+
+func (rt ReplicaType) IsRead() bool {
+	return rt == ReadReplica
+}
+func (rt ReplicaType) IsWrite() bool {
+	return rt == WriteReplica
+}
+
+func (rt ReplicaType) IsSingleNode() bool {
+	return rt == SingleNode
 }
