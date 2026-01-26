@@ -96,9 +96,12 @@ type InsertRecordRequest struct {
 	Record            map[string]interface{} `json:"record"`
 	MetadataFields    map[string]AttrType    `json:"metadata_fields,omitempty"`
 	EmbeddingProvider string                 `json:"embedding_provider,omitempty"`
-	Fields            []string               `json:"fields,omitempty"`
-	KeywordFields     []string               `json:"keyword_fields,omitempty"`
-	Model             string                 `json:"model,omitempty"`
+	// If a vector field is present, it will be used instead of embedding generation
+	Fields        []string `json:"fields,omitempty"`
+	KeywordFields []string `json:"keyword_fields,omitempty"`
+	// This is the map of field name to vector data
+	Vectors map[string][]float32 `json:"vectors,omitempty"`
+	Model   string               `json:"model,omitempty"`
 }
 
 // InsertRecordResponse represents the response for inserting a record
