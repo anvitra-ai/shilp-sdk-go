@@ -99,6 +99,14 @@ func (c *Client) ReIndexCollection(collectionName string) (*GenericResponse, err
 	return &result, err
 }
 
+// PQTrain performs Product Quantization training for an existing collection
+func (c *Client) PQTrain(collectionName string) (*GenericResponse, error) {
+	var result GenericResponse
+	path := fmt.Sprintf("/api/collections/v1/%s/pq-train", collectionName)
+	err := c.doRequest(http.MethodPost, path, nil, &result, nil)
+	return &result, err
+}
+
 // InsertRecord inserts a new record into a collection
 func (c *Client) InsertRecord(req InsertRecordRequest) (*InsertRecordResponse, error) {
 	var result InsertRecordResponse

@@ -20,6 +20,12 @@ func (c *Client) IngestData(req IngestRequest) (*IngestResponse, error) {
 // This method supports field-specific weights via the SearchRequest.Weights field,
 // allowing fine-tuned control over search relevance scoring.
 func (c *Client) SearchData(req SearchRequest) (*SearchResponse, error) {
+	if req.Collection == "" {
+		return nil, fmt.Errorf("collection name cannot be empty")
+	}
+	if len(req.VectorQuery) == 0 && len(req.Query) == 0 {
+		return nil, fmt.Errorf("both vector_query and query cannot be empty")
+	}
 	var result SearchResponse
 	err := c.doRequest(http.MethodPost, "/api/data/v1/search", req, &result, nil)
 	return &result, err

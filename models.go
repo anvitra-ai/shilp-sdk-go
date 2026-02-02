@@ -28,6 +28,7 @@ type Collection struct {
 	NoReferenceStorage   bool                   `json:"no_reference_storage"`
 	StorageType          StorageBackendType     `json:"storage_type"`
 	ReferenceStorageType StorageBackendType     `json:"reference_storage_type"`
+	IsPQEnabled          bool                   `json:"is_pq_enabled"`
 }
 
 // StorageBackendType represents the type of storage backend available to store the data for persistance
@@ -86,6 +87,7 @@ type AddCollectionRequest struct {
 	HasMetadataStorage   bool               `json:"has_metadata_storage"`
 	StorageType          StorageBackendType `json:"storage_type"`
 	ReferenceStorageType StorageBackendType `json:"reference_storage_type"`
+	EnablePQ             bool               `json:"enable_pq"`
 }
 
 // InsertRecordRequest represents the request to insert a record
@@ -192,6 +194,7 @@ type SearchRequest struct {
 	MaxDistance *float64           `json:"max_distance,omitempty"`
 	Filters     CompoundFilter     `json:"filters,omitempty"`
 	Sort        CompoundSort       `json:"sort,omitempty"`
+	VectorQuery []float32          `json:"vector_query,omitempty"`
 }
 
 // SearchResponse represents the response for searching data
