@@ -153,3 +153,9 @@ func (c *Client) ListEmbeddingModels() (*ListEmbeddingModelsResponse, error) {
 	err := c.doRequest(http.MethodGet, "/api/data/v1/embedding/models", nil, &result, nil)
 	return &result, err
 }
+
+func (c *Client) ListNLIVerticals() (*ListNLIVerticalsResponse, error) {
+	var result ListNLIVerticalsResponse
+	err := c.doRequest(http.MethodGet, "/api/data/v1/nli/verticals", nil, &result, nil)
+	return &result, err
+}

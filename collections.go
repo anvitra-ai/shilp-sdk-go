@@ -1,6 +1,7 @@
 package shilp
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"net/http"
@@ -111,5 +112,64 @@ func (c *Client) PQTrain(collectionName string) (*GenericResponse, error) {
 func (c *Client) InsertRecord(req InsertRecordRequest) (*InsertRecordResponse, error) {
 	var result InsertRecordResponse
 	err := c.doRequest(http.MethodPost, "/api/collections/v1/record", req, &result, nil)
+	return &result, err
+}
+
+func (c *Client) GetCollectionData(collectionName string, offset, limit int) (*GetCollectionDataResponse, error) {
+	var result GetCollectionDataResponse
+	path := fmt.Sprintf("/api/collections/v1/%s/data?offset=%d&limit=%d", collectionName, offset, limit)
+	err := c.doRequest(http.MethodGet, path, nil, &result, nil)
+	return &result, err
+}
+
+// EnableNLI enables Natural Language Inference for a collection and vertical. This is an SSE endpoint that streams the progress of enabling NLI.
+// The caller is responsible for closing the stop channel to stop the stream.
+// vertical should be the vertical supported by the NLI provider, if this need to be a custom vertical, keep it empty.
+func (c *Client) EnableNLI(collection string, vertical string, stop <-chan struct{}) (<-chan string, <-chan error) {
+	events := make(chan string)
+	errs := make(chan error, 1)
+
+	go func() {
+		defer close(events)
+		defer close(errs)
+
+		url := fmt.Sprintf("%s/api/collections/v1/%s/nli/enable?vertical=%s", c.baseURL, collection, vertical)
+		req, err := http.NewRequest(http.MethodGet, url, nil)
+		if err != nil {
+			errs <- err
+			return
+		}
+
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			errs <- err
+			return
+		}
+		defer resp.Body.Close()
+
+		reader := bufio.NewReader(resp.Body)
+
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+				line, err := reader.ReadString('\n')
+				if err != nil {
+					errs <- err
+					return
+				}
+				events <- line
+			}
+		}
+	}()
+
+	return events, errs
+}
+
+func (c *Client) GetCollectionSchema(collectionName string) (*GetCollectionSchemaResponse, error) {
+	var result GetCollectionSchemaResponse
+	path := fmt.Sprintf("/api/collections/v1/%s/schema", collectionName)
+	err := c.doRequest(http.MethodGet, path, nil, &result, nil)
 	return &result, err
 }

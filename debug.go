@@ -7,11 +7,14 @@ import (
 )
 
 // GetCollectionDistance gets the distance of a node in a collection for debug purposes
-func (c *Client) GetCollectionDistance(collectionName, field string, nodeID int, text string) (*DebugDistanceResponse, error) {
+func (c *Client) GetCollectionDistance(collectionName, field string, nodeID int, text string, customMatcherText string) (*DebugDistanceResponse, error) {
 	var result DebugDistanceResponse
 	path := fmt.Sprintf("/api/collections/v1/debug/%s/%s/distance/%d", collectionName, field, nodeID)
 	queryParams := map[string]string{
 		"text": text,
+	}
+	if customMatcherText != "" {
+		queryParams["custom_matcher_text"] = customMatcherText
 	}
 	err := c.doRequest(http.MethodGet, path, nil, &result, queryParams)
 	return &result, err
@@ -63,5 +66,12 @@ func (c *Client) GetCollectionNodeByReferenceNodeID(collectionName string, nodeI
 	var result DebugReferenceNodeResponse
 	path := fmt.Sprintf("/api/collections/v1/debug/%s/nodes/reference_node/%d", collectionName, nodeID)
 	err := c.doRequest(http.MethodGet, path, nil, &result, nil)
+	return &result, err
+}
+
+func (c *Client) GetCollectionEmbeddings(collectionName string, req DebugGetEmbeddingsRequest) (*DebugGetEmbeddingsResponse, error) {
+	var result DebugGetEmbeddingsResponse
+	path := fmt.Sprintf("/api/collections/v1/debug/%s/embedding", collectionName)
+	err := c.doRequest(http.MethodPost, path, req, &result, nil)
 	return &result, err
 }
