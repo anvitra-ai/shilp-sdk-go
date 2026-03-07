@@ -67,8 +67,11 @@ func main() {
 		Collection: "my_collection",
 		ID:         "record-1",
 		Record: map[string]interface{}{
-			"title":  "Hello World",
-			"vector": []float64{0.1, 0.2, 0.3},
+			"title": "Hello World",
+		},
+		Fields: []string{"title"},
+		Vectors: map[string][]float32{
+			"my_embedding": {0.1, 0.2, 0.3},
 		},
 	})
 	if err != nil {
