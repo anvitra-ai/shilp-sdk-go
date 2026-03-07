@@ -38,8 +38,21 @@ func main() {
 	}
 	fmt.Printf("Collections: %+v\n", collections.Data)
 
-    // Drop collection if exists
-	client.DropCollection("my_collection")
+    // checkk if collection exists
+	exists := false
+	for _, col := range collections.Data {
+		if col.Name == "my_collection" {
+			exists = true
+			break
+		}
+	}
+	if exists {
+		fmt.Println("Collection 'my_collection' already exists, dropping it.")
+		_, err = client.DropCollection("my_collection")
+		if err != nil {
+			log.Fatalf("Failed to drop existing collection: %v", err)
+		}
+	}
 
 	// Create a new collection
 	_, err = client.AddCollection(shilp.AddCollectionRequest{
