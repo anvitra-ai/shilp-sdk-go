@@ -167,7 +167,8 @@ type InsertRecordRequest struct {
 	Vectors      map[string][]float32          `json:"vectors,omitempty"`
 	Model        string                        `json:"model,omitempty"`
 	VectorConfig map[string]VectorCreateConfig `json:"vector_config,omitempty"`
-	ArrayFields  []string                      `json:"array_fields,omitempty"`
+	// ArrayFields specifies which fields in the record are comma separated string that have individual meaning. Separate embeddings are generated and centroid is stored for the entire field.
+	ArrayFields []string `json:"array_fields,omitempty"`
 }
 
 type VectorCreateConfig struct {
@@ -420,8 +421,10 @@ type DebugDistanceResponse struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
 	Data    struct {
-		Distance float64   `json:"distance"`
-		Vector   []float64 `json:"vector"`
+		Distance              float64   `json:"distance"`
+		Vector                []float64 `json:"vector"`
+		CustomMatcherDistance float32   `json:"custom_matcher_distance,omitempty"`
+		CustomMatcherVector   []float32 `json:"custom_matcher_vector,omitempty"`
 	} `json:"data"`
 }
 

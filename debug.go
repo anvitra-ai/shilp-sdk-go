@@ -62,9 +62,9 @@ func (c *Client) GetCollectionNodesAtLevel(collectionName string, level int) (*D
 }
 
 // GetCollectionNodeByReferenceNodeID gets node by reference node ID of a collection for debug purposes
-func (c *Client) GetCollectionNodeByReferenceNodeID(collectionName string, nodeID int) (*DebugReferenceNodeResponse, error) {
+func (c *Client) GetCollectionNodeByReferenceNodeID(collectionName string, nodeID string) (*DebugReferenceNodeResponse, error) {
 	var result DebugReferenceNodeResponse
-	path := fmt.Sprintf("/api/collections/v1/debug/%s/nodes/reference_node/%d", collectionName, nodeID)
+	path := fmt.Sprintf("/api/collections/v1/debug/%s/nodes/reference_node/%s", collectionName, nodeID)
 	err := c.doRequest(http.MethodGet, path, nil, &result, nil)
 	return &result, err
 }
