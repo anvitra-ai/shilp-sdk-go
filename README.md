@@ -39,11 +39,11 @@ func main() {
 	fmt.Printf("Collections: %+v\n", collections.Data)
 
     // Drop collection if exists
-	client.DropCollection("my-collection")
+	client.DropCollection("my_collection")
 
 	// Create a new collection
 	_, err = client.AddCollection(shilp.AddCollectionRequest{
-		Name: "my-collection",
+		Name: "my_collection",
 	})
 	if err != nil {
 		log.Fatalf("Failed to create collection: %v", err)
@@ -51,7 +51,7 @@ func main() {
 
 	// Insert a record
 	_, err = client.InsertRecord(shilp.InsertRecordRequest{
-		Collection: "my-collection",
+		Collection: "my_collection",
 		ID:         "record-1",
 		Record: map[string]interface{}{
 			"title":  "Hello World",
@@ -63,7 +63,7 @@ func main() {
 	}
 	// Flush collection incase you are using insert record.
 	// Flush can be used post inserting the batch of records.
-	_, err = client.FlushCollection("my-collection")
+	_, err = client.FlushCollection("my_collection")
 	if err != nil {
 		log.Printf("Failed to flush collection: %v", err)
 	}
@@ -71,7 +71,7 @@ func main() {
 	// Search with max distance filter
 	maxDist := 0.5
 	advancedResults, err := client.SearchData(shilp.SearchRequest{
-		Collection:  "my-collection",
+		Collection:  "my_collection",
 		Query:       "Hello",
 		Fields:      []string{"title"},
 		Limit:       10,
@@ -82,7 +82,7 @@ func main() {
 	}
 	fmt.Printf("Advanced search results: %+v\n", advancedResults.Data)
 
-	_, err = client.DropCollection("my-collection")
+	_, err = client.DropCollection("my_collection")
 	if err != nil {
 		log.Printf("Failed to drop collection: %v", err)
 	}
@@ -95,22 +95,22 @@ The SDK also provides debug endpoints for inspecting collection internals:
 
 ```go
 // Re-index a collection
-_, err = client.ReIndexCollection("my-collection")
+_, err = client.ReIndexCollection("my_collection")
 
 // Get collection levels
-levels, err := client.GetCollectionLevels("my-collection")
+levels, err := client.GetCollectionLevels("my_collection")
 if err != nil {
 	log.Printf("Failed to get levels: %v", err)
 }
 
 // Get nodes at a specific level
-nodes, err := client.GetCollectionNodesAtLevel("my-collection", 0)
+nodes, err := client.GetCollectionNodesAtLevel("my_collection", 0)
 if err != nil {
 	log.Printf("Failed to get nodes: %v", err)
 }
 
 // Get node information
-nodeInfo, err := client.GetCollectionNodeInfo("my-collection", "title", 123)
+nodeInfo, err := client.GetCollectionNodeInfo("my_collection", "title", 123)
 if err != nil {
 	log.Printf("Failed to get node info: %v", err)
 }
@@ -118,19 +118,19 @@ if err != nil {
 // Get distance to a node
 limit := 10
 offset := 0
-neighbors, err := client.GetCollectionNodeNeighborsAtLevel("my-collection", "title", 123, 0, &limit, &offset)
+neighbors, err := client.GetCollectionNodeNeighborsAtLevel("my_collection", "title", 123, 0, &limit, &offset)
 if err != nil {
 	log.Printf("Failed to get neighbors: %v", err)
 }
 
 // Get distance calculation
-distance, err := client.GetCollectionDistance("my-collection", "title", 123, "some text")
+distance, err := client.GetCollectionDistance("my_collection", "title", 123, "some text")
 if err != nil {
 	log.Printf("Failed to get distance: %v", err)
 }
 
 // Get node by reference ID
-refNode, err := client.GetCollectionNodeByReferenceNodeID("my-collection", 456)
+refNode, err := client.GetCollectionNodeByReferenceNodeID("my_collection", 456)
 if err != nil {
 	log.Printf("Failed to get reference node: %v", err)
 }
@@ -159,7 +159,7 @@ if err != nil {
 fmt.Printf("Registered replica, last LSN: %d\n", registerResp.LastLSN)
 
 // Get oplog status for a collection
-status, err := client.GetOplogStatus("my-collection")
+status, err := client.GetOplogStatus("my_collection")
 if err != nil {
 	log.Printf("Failed to get oplog status: %v", err)
 }
@@ -167,7 +167,7 @@ fmt.Printf("Oplog status - Last LSN: %d, Retention LSN: %d, Replicas: %d\n",
 	status.LastLSN, status.RetentionLSN, status.ReplicaCount)
 
 // Get oplog entries after a specific LSN
-entries, err := client.GetOplogEntries("my-collection", 1000, 100)
+entries, err := client.GetOplogEntries("my_collection", 1000, 100)
 if err != nil {
 	log.Printf("Failed to get oplog entries: %v", err)
 }
@@ -180,7 +180,7 @@ if err != nil {
 }
 
 // Update replica LSN (heartbeat)
-updateResp, err := client.UpdateReplicaLSN("my-collection", "replica-1", 1050)
+updateResp, err := client.UpdateReplicaLSN("my_collection", "replica-1", 1050)
 if err != nil {
 	log.Printf("Failed to update replica LSN: %v", err)
 }
