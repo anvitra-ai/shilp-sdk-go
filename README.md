@@ -68,16 +68,9 @@ func main() {
 		log.Printf("Failed to flush collection: %v", err)
 	}
 
-	// Search
-	results, err := client.SearchData("my-collection", "Hello", []string{"title"}, 10)
-	if err != nil {
-		log.Printf("Search failed: %v", err)
-	}
-	fmt.Printf("Search results: %+v\n", results.Data)
-
-	// Advanced search with max distance filter
+	// Search with max distance filter
 	maxDist := 0.5
-	advancedResults, err := client.SearchDataPost(shilp.SearchRequest{
+	advancedResults, err := client.SearchData(shilp.SearchRequest{
 		Collection:  "my-collection",
 		Query:       "Hello",
 		Fields:      []string{"title"},
