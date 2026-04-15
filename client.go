@@ -17,6 +17,7 @@ import (
 type Client struct {
 	baseURL    string
 	httpClient *http.Client
+	authToken  string
 }
 
 // ClientOption is a function that configures the Client
@@ -26,6 +27,13 @@ type ClientOption func(*Client)
 func WithHTTPClient(client *http.Client) ClientOption {
 	return func(c *Client) {
 		c.httpClient = client
+	}
+}
+
+// WithAuth sets the authentication token for the client. Use https://www.goiam.dev/api-spec#tag/auth/post/auth/v1/client to get a token. The token is a JWT that should be included in the Authorization header of each request.
+func WithAuth(token string) ClientOption {
+	return func(c *Client) {
+		c.authToken = token
 	}
 }
 
@@ -50,6 +58,10 @@ func (c *Client) doRequest(method, path string, body interface{}, result interfa
 	req, err := c.prepareRequest(method, path, body, queryParams)
 	if err != nil {
 		return err
+	}
+
+	if c.authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+c.authToken)
 	}
 
 	resp, err := c.httpClient.Do(req)

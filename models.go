@@ -41,6 +41,7 @@ type Collection struct {
 	IsPQEnabled          bool                   `json:"is_pq_enabled"`
 	IsNLIEnabled         bool                   `json:"is_nli_enabled,omitempty"`
 	NLIDomain            string                 `json:"nli_domain,omitempty"`
+	TotalNoofDocuments   int                    `json:"total_no_of_documents"`
 }
 
 // StorageBackendType represents the type of storage backend available to store the data for persistance
@@ -70,6 +71,16 @@ func (s StorageBackendType) IsValid() bool {
 	default:
 		return false
 	}
+}
+
+type EnableMetadataStoreRequest struct {
+	Fields []MetadataColumnSchema `json:"fields,omitempty"`
+}
+
+type EnableMetadataStoreResponse struct {
+	Success        bool   `json:"success"`
+	Message        string `json:"message"`
+	RecordsIndexed int    `json:"records_indexed,omitempty"`
 }
 
 type MetadataColumnSchema struct {
@@ -225,11 +236,12 @@ type IngestSourceType string
 const (
 	IngestSourceTypeFile    IngestSourceType = "file"
 	IngestSourceTypeMongoDB IngestSourceType = "mongodb"
+	IngestSourceTypeAnvitra IngestSourceType = "anvitra"
 )
 
 func (i IngestSourceType) IsValid() bool {
 	switch i {
-	case IngestSourceTypeFile, IngestSourceTypeMongoDB:
+	case IngestSourceTypeFile, IngestSourceTypeMongoDB, IngestSourceTypeAnvitra:
 		return true
 	default:
 		return false
@@ -282,6 +294,19 @@ type SearchRequest struct {
 	FieldConfig   map[string]VectorSearchConfig `json:"field_config,omitempty"`
 	Queries       map[string]string             `json:"queries,omitempty"`        // For multi-query search, key is the query name and value is the query string
 	VectorQueries map[string][]float32          `json:"vector_queries,omitempty"` // For multi-query search, key is the query name and value is the vector query
+	FuzzyAlgo     FuzzyAlgo                     `json:"fuzzy_algo,omitempty"`
+}
+
+type FuzzyAlgo string
+
+// Fuzzy algorithm identifiers.
+const (
+	FuzzyAlgoLevenshtein FuzzyAlgo = "levenshtein"
+	FuzzyAlgoJaroWinkler FuzzyAlgo = "jaro_winkler"
+)
+
+func (f FuzzyAlgo) IsValid() bool {
+	return f == FuzzyAlgoLevenshtein || f == FuzzyAlgoJaroWinkler
 }
 
 type VectorSearchConfig struct {
@@ -294,6 +319,16 @@ type SearchResponse struct {
 	Message        string                   `json:"message"`
 	Data           []map[string]interface{} `json:"data"`
 	Interpretation *Query                   `json:"interpretation,omitempty"`
+	Timing         *SearchTiming            `json:"timing,omitempty"`
+}
+
+// SearchTiming holds the duration (in milliseconds) for each step of a search request.
+type SearchTiming struct {
+	InterpretationMs int64 `json:"interpretation_ms,omitempty"`
+	EmbeddingMs      int64 `json:"embedding_ms,omitempty"`
+	MetadataFilterMs int64 `json:"metadata_filter_ms,omitempty"`
+	SearchMs         int64 `json:"search_ms,omitempty"`
+	TotalMs          int64 `json:"total_ms"`
 }
 
 type Query struct {
@@ -839,4 +874,80 @@ func (rt ReplicaType) IsWrite() bool {
 
 func (rt ReplicaType) IsSingleNode() bool {
 	return rt == SingleNode
+}
+
+type GetSettingsResponse struct {
+	Success bool      `json:"success"`
+	Message string    `json:"message"`
+	Data    *Settings `json:"data,omitempty"`
+}
+
+type Settings struct {
+	Auth           SettingsAuth          `json:"auth"`
+	AllowedOrigins []string              `json:"allowedOrigins,omitempty"`
+	Integrations   []SettingsIntegration `json:"integrations,omitempty"`
+}
+
+type SettingsAuth struct {
+	Enable        bool                    `json:"enable"`
+	Tested        bool                    `json:"tested"`
+	Name          string                  `json:"name,omitempty"`
+	Arguments     []ProviderArgumentValue `json:"arguments,omitempty"`
+	APIAuthConfig APIAuthConfig           `json:"apiAuthConfig,omitempty"`
+}
+
+type APIAuthConfig struct {
+	Search      bool `json:"search"`
+	Collections bool `json:"collections"`
+	Data        bool `json:"data"`
+	Explore     bool `json:"explore"`
+	Oplog       bool `json:"oplog"`
+}
+
+type ProviderArgumentValue struct {
+	Key      string `json:"key"`
+	Value    string `json:"value"`
+	IsSecret bool   `json:"is_secret,omitempty"`
+}
+
+type SettingsIntegration struct {
+	Enable    bool                    `json:"enable"`
+	Name      string                  `json:"name,omitempty"`
+	Arguments []ProviderArgumentValue `json:"arguments,omitempty"`
+}
+
+type SettingsUpdateRequest struct {
+	Auth           *SettingsAuth                  `json:"auth,omitempty"`
+	Tested         *bool                          `json:"tested,omitempty"`
+	AuthConfig     *SettingsAuth                  `json:"authConfig,omitempty"`
+	AllowedOrigins *[]string                      `json:"allowedOrigins,omitempty"`
+	Integration    map[string]SettingsIntegration `json:"integration,omitempty"`
+}
+
+type SettingsAvailableProvidersResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Data    struct {
+		Auth         []SettingsProviderInfo `json:"auth,omitempty"`
+		Integrations []SettingsProviderInfo `json:"integrations,omitempty"`
+	} `json:"data,omitempty"`
+}
+
+type SettingsProviderArguments struct {
+	Label       string `json:"label"`
+	Description string `json:"description"`
+	IsSecret    bool   `json:"is_secret,omitempty"`
+}
+
+type SettingsProviderType string
+
+const (
+	AuthProviderType       SettingsProviderType = "auth"
+	DataSourceProviderType SettingsProviderType = "data-source"
+)
+
+type SettingsProviderInfo struct {
+	Name      string                      `json:"name"`
+	Type      SettingsProviderType        `json:"type"`
+	Arguments []SettingsProviderArguments `json:"arguments,omitempty"`
 }

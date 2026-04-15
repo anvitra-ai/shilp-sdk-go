@@ -173,3 +173,10 @@ func (c *Client) GetCollectionSchema(collectionName string) (*GetCollectionSchem
 	err := c.doRequest(http.MethodGet, path, nil, &result, nil)
 	return &result, err
 }
+
+func (c *Client) EnableMetadataStore(collectionName string, req EnableMetadataStoreRequest) (*EnableMetadataStoreResponse, error) {
+	var result EnableMetadataStoreResponse
+	path := fmt.Sprintf("/api/collections/v1/%s/metadata/enable", collectionName)
+	err := c.doRequest(http.MethodPost, path, req, &result, nil)
+	return &result, err
+}
