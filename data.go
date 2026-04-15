@@ -26,9 +26,6 @@ func (c *Client) SearchData(req SearchRequest) (*SearchResponse, error) {
 	if len(req.VectorQuery) == 0 && len(req.Query) == 0 {
 		return nil, fmt.Errorf("both vector_query and query cannot be empty")
 	}
-	if !req.FuzzyAlgo.IsValid() {
-		return nil, fmt.Errorf("invalid fuzzy algorithm - %s", req.FuzzyAlgo)
-	}
 	var result SearchResponse
 	err := c.doRequest(http.MethodPost, "/api/data/v1/search", req, &result, nil)
 	return &result, err
