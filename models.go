@@ -262,10 +262,18 @@ type ListIngestionSourcesResponse struct {
 }
 
 type VerticalInfo struct {
-	Name     string `json:"name,omitempty"`
-	Label    string `json:"label,omitempty"`
-	IsNative bool   `json:"is_native,omitempty"`
+	Name     string         `json:"name,omitempty"`
+	Label    string         `json:"label,omitempty"`
+	Models   []NLIModelInfo `json:"models,omitempty"`
+	IsNative bool           `json:"is_native,omitempty"`
+	Version  string         `json:"version,omitempty"`
 }
+
+type NLIModelInfo struct {
+	Name    string `json:"name,omitempty"`
+	Version string `json:"version,omitempty"`
+}
+
 type ListNLIVerticalsResponse struct {
 	Success bool           `json:"success"`
 	Data    []VerticalInfo `json:"data,omitempty"`
@@ -950,4 +958,70 @@ type SettingsProviderInfo struct {
 	Name      string                      `json:"name"`
 	Type      SettingsProviderType        `json:"type"`
 	Arguments []SettingsProviderArguments `json:"arguments,omitempty"`
+}
+
+type ListCollectionsModelsResponse struct {
+	Success bool              `json:"success"`
+	Data    []CollectionModel `json:"data"`
+	Message string            `json:"message"`
+}
+
+type UpdateModelsEvent struct {
+	Status  string `json:"status"`          // "updating", "success", "error", "complete"
+	Message string `json:"message"`         // Human-readable message
+	Field   string `json:"field"`           // Model field being updated
+	Total   int    `json:"total"`           // Total models to update
+	Current int    `json:"current"`         // Current model number
+	Error   string `json:"error,omitempty"` // Error message if status is "error"
+}
+
+type GetCollectionModelResponse struct {
+	Success bool   `json:"success"`
+	Data    *Model `json:"data"`
+	Message string `json:"message"`
+}
+
+type CollectionModel struct {
+	Collection       string  `json:"collection"`
+	Models           []Model `json:"models"`
+	UpgradeAvailable bool    `json:"upgrade_available"`
+}
+
+type Model struct {
+	ID                          string                 `json:"id"`
+	ProjectID                   string                 `json:"project_id"`
+	Name                        string                 `json:"name"`
+	Description                 string                 `json:"description"`
+	Collection                  string                 `json:"collection"`
+	Version                     string                 `json:"version"`
+	ModelType                   ModelType              `json:"model_type"`
+	Status                      string                 `json:"status"`
+	SupportedVersion            string                 `json:"supported_version"`
+	Labels                      []string               `json:"labels"`
+	EmbeddingDim                int                    `json:"embedding_dim"`
+	Mode                        string                 `json:"mode"`
+	LabelField                  string                 `json:"label_field"`
+	NumSamples                  int                    `json:"num_samples"`
+	Skipped                     int                    `json:"skipped"`
+	LabelGrouping               map[string][]string    `json:"label_grouping"`
+	ClassifierSelectionStrategy map[string]interface{} `json:"classifier_selection_strategy"`
+	FilePath                    string                 `json:"file_path"`
+	FileSize                    int64                  `json:"file_size"`
+	Enabled                     bool                   `json:"enabled"`
+	CreatedAt                   interface{}            `json:"created_at"`
+	UpdatedAt                   interface{}            `json:"updated_at"`
+	DeletedAt                   interface{}            `json:"deleted_at"`
+}
+
+type ModelType string
+
+const (
+	ModelTypeCollection ModelType = "collection"
+	ModelTypeVertical   ModelType = "vertical"
+)
+
+type GetModelResponse struct {
+	Success bool   `json:"success"`
+	Data    *Model `json:"data"`
+	Message string `json:"message"`
 }

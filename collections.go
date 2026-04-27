@@ -2,6 +2,7 @@ package shilp
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -179,4 +180,66 @@ func (c *Client) EnableMetadataStore(collectionName string, req EnableMetadataSt
 	path := fmt.Sprintf("/api/collections/v1/%s/metadata/enable", collectionName)
 	err := c.doRequest(http.MethodPost, path, req, &result, nil)
 	return &result, err
+}
+
+func (c *Client) ListCollectionModels() (*ListCollectionsModelsResponse, error) {
+	var result ListCollectionsModelsResponse
+	err := c.doRequest(http.MethodGet, "/api/collections/v1/models", nil, &result, nil)
+	return &result, err
+}
+
+func (c *Client) GetCollectionModelInfo(collectionName string, modelId string) (*GetCollectionModelResponse, error) {
+	var result GetCollectionModelResponse
+	path := fmt.Sprintf("/api/collections/v1/%s/models/%s", collectionName, modelId)
+	err := c.doRequest(http.MethodGet, path, nil, &result, nil)
+	return &result, err
+}
+
+func (c *Client) UpdateCollectionModel(collectionName string, stop <-chan struct{}) <-chan UpdateModelsEvent {
+	events := make(chan UpdateModelsEvent)
+
+	go func() {
+		defer close(events)
+
+		url := fmt.Sprintf("%s/api/collections/v1/%s/models/update", c.baseURL, collectionName)
+		req, err := http.NewRequest(http.MethodGet, url, nil)
+		if err != nil {
+			events <- UpdateModelsEvent{Error: err.Error()}
+			return
+		}
+
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			events <- UpdateModelsEvent{Error: err.Error()}
+			return
+		}
+		defer resp.Body.Close()
+
+		reader := bufio.NewReader(resp.Body)
+
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+				line, err := reader.ReadString('\n')
+				if err != nil {
+					if err == io.EOF {
+						return
+					}
+					events <- UpdateModelsEvent{Error: err.Error()}
+					return
+				}
+				var event UpdateModelsEvent
+				err = json.Unmarshal([]byte(line), &event)
+				if err != nil {
+					events <- UpdateModelsEvent{Error: err.Error()}
+					return
+				}
+				events <- event
+			}
+		}
+	}()
+
+	return events
 }
