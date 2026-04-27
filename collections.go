@@ -202,7 +202,7 @@ func (c *Client) UpdateCollectionModel(collectionName string, stop <-chan struct
 		defer close(events)
 
 		url := fmt.Sprintf("%s/api/collections/v1/%s/models/update", c.baseURL, collectionName)
-		req, err := http.NewRequest(http.MethodGet, url, nil)
+		req, err := http.NewRequest(http.MethodPost, url, nil)
 		if err != nil {
 			events <- UpdateModelsEvent{Error: err.Error()}
 			return
@@ -230,13 +230,24 @@ func (c *Client) UpdateCollectionModel(collectionName string, stop <-chan struct
 					events <- UpdateModelsEvent{Error: err.Error()}
 					return
 				}
-				var event UpdateModelsEvent
-				err = json.Unmarshal([]byte(line), &event)
-				if err != nil {
-					events <- UpdateModelsEvent{Error: err.Error()}
-					return
+				
+				// Skip empty lines and event type lines
+				line = line[:len(line)-1] // Remove trailing newline
+				if line == "" || line[:6] == "event:" {
+					continue
 				}
-				events <- event
+				
+				// Parse SSE data format
+				if len(line) > 6 && line[:5] == "data:" {
+					jsonData := line[6:] // Skip "data: " prefix
+					var event UpdateModelsEvent
+					err = json.Unmarshal([]byte(jsonData), &event)
+					if err != nil {
+						events <- UpdateModelsEvent{Error: err.Error()}
+						return
+					}
+					events <- event
+				}
 			}
 		}
 	}()
